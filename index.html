@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Monstros</title>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #ecf0f1;
+        margin: 0;
+        padding: 0;
+    }
+
+    h1 {
+        text-align: center;
+        font-size: 32px;
+        margin: 20px 0;
+        color: #2c3e50;
+    }
+
+    .monster {
+        background: #dfe6e9;
+        border: 1px solid #aaa;
+        margin: 10px 20px;
+        padding: 15px;
+        display: grid;
+        grid-template-columns: 1fr auto auto auto;
+        grid-row-gap: 10px;
+        align-items: center;
+    }
+
+    .monster-title {
+        grid-row: span 2;
+        font-size: 20px;
+        font-weight: bold;
+        color: #2c3e50;
+    }
+
+    input.time {
+        width: 100px;
+        font-size: 18px;
+        text-align: center;
+        background: #0b1d3a;
+        color: #00ffcc;
+        border: none;
+        padding: 6px;
+    }
+
+    button {
+        background: #c0392b;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .channel {
+        font-weight: bold;
+        color: #2c3e50;
+    }
+
+    .alert {
+        background: #7f1d1d !important;
+        color: white !important;
+    }
+</style>
+</head>
+
+<body>
+
+<h1>MONSTROS</h1>
+
+<div id="app"></div>
+
+<script>
+const DEFAULT_TIME = "00:30:00";
+
+// =====================
+// SOM (BIP)
+// =====================
+function playBeep(times) {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+    let i = 0;
+    function beep() {
+        if (i >= times) return;
+        const osc = ctx.createOscillator();
+        osc.type = "square";
+        osc.frequency.value = 1200;
+        osc.connect(ctx.destination);
+        osc.start();
+        setTimeout(() => {
+            osc.stop();
+            i++;
+            setTimeout(beep, 150);
+        }, 300);
+    }
+    beep();
+}
+
+// =====================
+// CRONÔMETRO
+// =====================
+function startTimer(input, bips) {
+    if (input.dataset.running === "1") return;
+
+    let parts = input.value.split(":").map(Number);
+    if (parts.length !== 3) return;
+
+    let seconds = parts[0]*3600 + parts[1]*60 + parts[2];
+    if (seconds <= 0) return;
+
+    input.dataset.running = "1";
+    input.disabled = true;
+
+    const interval = setInterval(() => {
+        seconds--;
+        let h = String(Math.floor(seconds/3600)).padStart(2,"0");
+        let m = String(Math.floor(seconds%3600/60)).padStart(2,"0");
+        let s = String(seconds%60).padStart(2,"0");
+        input.value = `${h}:${m}:${s}`;
+
+        if (seconds <= 0) {
+            clearInterval(interval);
+            input.dataset.running = "0";
+            input.disabled = false;
+            input.classList.add("alert");
+            playBeep(bips);
+
+            setTimeout(() => {
+                input.classList.remove("alert");
+                input.value = DEFAULT_TIME;
+            }, 600);
+        }
+    }, 1000);
+}
+
+// =====================
+// MONSTROS
+// =====================
+const monsters = [
+    ["Nv. 66 Capitão Intruso Trésál", 1],
+    ["Nv. 66 Capitão Intruso Troll", 2],
+    ["Nv. 66 Capitão Combatente Jotun Truculento", 3],
+    ["Nv. 66 Capitão Desordeiro Jotun do Fogo Atroz", 4]
+];
+
+const app = document.getElementById("app");
+
+monsters.forEach(m => {
+    const div = document.createElement("div");
+    div.className = "monster";
+
+    div.innerHTML = `
+        <div class="monster-title">${m[0]}</div>
+
+        <input class="time" value="${DEFAULT_TIME}">
+        <button>START</button>
+        <div class="channel">CANAL 1</div>
+
+        <input class="time" value="${DEFAULT_TIME}">
+        <button>START</button>
+        <div class="channel">CANAL 2</div>
+    `;
+
+    const inputs = div.querySelectorAll("input");
+    const buttons = div.querySelectorAll("button");
+
+    buttons.forEach((btn, i) => {
+        btn.onclick = () => startTimer(inputs[i], m[1]);
+    });
+
+    app.appendChild(div);
+});
+</script>
+
+</body>
+</html>
