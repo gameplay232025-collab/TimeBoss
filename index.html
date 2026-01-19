@@ -12,7 +12,6 @@
         padding: 0;
     }
 
-    /* ====== TÍTULO FIXO ====== */
     .version {
         position: fixed;
         top: 8px;
@@ -50,7 +49,7 @@
     }
 
     input.time {
-        width: 120px;
+        width: 130px;
         font-size: 18px;
         text-align: center;
         background: #0b1d3a;
@@ -87,12 +86,14 @@
 
 <body>
 
-<h1>Timer Boss Myrkrheim v1.0.2</h1>
+<div class="version">Timer Boss V 1.0.2</div>
+
+<h1>MONSTROS</h1>
 
 <div id="app"></div>
 
 <script>
-const DEFAULT_TIME = "00:30:00";
+const WARNING_TIME = 1800; // 30 minutos
 
 // =====================
 // SOM (BIP)
@@ -123,39 +124,39 @@ function playBeep(times) {
 function startTimer(input, bips) {
     if (input.dataset.running === "1") return;
 
-    let parts = input.value.replace("-", "").split(":").map(Number);
-    if (parts.length !== 3) return;
+    let seconds = 0;
+    let negative = false;
 
-    let seconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
-    if (seconds <= 0) return;
+    input.value = "00:00:00";
+    input.classList.remove("warning", "negative");
 
     input.dataset.running = "1";
     input.disabled = true;
 
-    let warningTriggered = false;
-
     setInterval(() => {
-        seconds--;
+        if (!negative) {
+            seconds++;
 
-        let abs = Math.abs(seconds);
-        let h = String(Math.floor(abs / 3600)).padStart(2, "0");
-        let m = String(Math.floor(abs % 3600 / 60)).padStart(2, "0");
-        let s = String(abs % 60).padStart(2, "0");
+            if (seconds === WARNING_TIME) {
+                playBeep(bips);
+                input.classList.add("warning");
 
-        input.value = (seconds < 0 ? "-" : "") + `${h}:${m}:${s}`;
-
-        // 🟡 Quando bater 30 minutos
-        if (seconds === 1800 && !warningTriggered) {
-            warningTriggered = true;
-            input.classList.add("warning");
-            playBeep(bips);
+                // 🔥 ZERA E COMEÇA NEGATIVO
+                seconds = 0;
+                negative = true;
+                input.classList.remove("warning");
+                input.classList.add("negative");
+            }
+        } else {
+            seconds++;
         }
 
-        // 🔴 Tempo negativo
-        if (seconds < 0) {
-            input.classList.remove("warning");
-            input.classList.add("negative");
-        }
+        let h = String(Math.floor(seconds / 3600)).padStart(2, "0");
+        let m = String(Math.floor((seconds % 3600) / 60)).padStart(2, "0");
+        let s = String(seconds % 60).padStart(2, "0");
+
+        input.value = (negative ? "-" : "") + `${h}:${m}:${s}`;
+
     }, 1000);
 }
 
@@ -164,9 +165,9 @@ function startTimer(input, bips) {
 // =====================
 const monsters = [
     ["Nv. 66 Capitão Intruso Trésál", 1],
-    ["Nv. 67 Capitão Intruso Troll", 2],
-    ["Nv. 68 Capitão Combatente Jotun Truculento", 3],
-    ["Nv. 68 Capitão Desordeiro Jotun do Fogo Atroz", 4]
+    ["Nv. 66 Capitão Intruso Troll", 2],
+    ["Nv. 66 Capitão Combatente Jotun Truculento", 3],
+    ["Nv. 66 Capitão Desordeiro Jotun do Fogo Atroz", 4]
 ];
 
 const app = document.getElementById("app");
@@ -178,11 +179,11 @@ monsters.forEach(m => {
     div.innerHTML = `
         <div class="monster-title">${m[0]}</div>
 
-        <input class="time" value="${DEFAULT_TIME}">
+        <input class="time" value="00:00:00" readonly>
         <button>START</button>
         <div class="channel">CANAL 1</div>
 
-        <input class="time" value="${DEFAULT_TIME}">
+        <input class="time" value="00:00:00" readonly>
         <button>START</button>
         <div class="channel">CANAL 2</div>
     `;
@@ -200,4 +201,3 @@ monsters.forEach(m => {
 
 </body>
 </html>
-
